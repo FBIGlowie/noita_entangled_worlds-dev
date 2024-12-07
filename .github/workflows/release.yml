@@ -135,8 +135,8 @@ jobs:
           LATEST_VERSION_NAME: ${{ github.ref_name }}
           LATEST_VERSION_SHA256_HASH: ${{ env.sha256 }}
         run: |
-          sed -i '/latest = {/!b;n;c\\tver = \"${LATEST_VERSION_NAME}\";' flake.nix
-          sed -i '/latest = {/!b;n;n;c\\tsha256 = \"${LATEST_VERSION_SHA256_HASH}\";' flake.nix
+          sed -i '/latest = {/!b;n;c\\tver = \"${{ github.ref_name }}\";' flake.nix
+          sed -i '/latest = {/!b;n;n;c\\tsha256 = \"${{ env.sha256 }}\";' flake.nix
           cat flake.nix
 
       - name: Update flake
