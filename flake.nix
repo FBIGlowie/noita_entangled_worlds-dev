@@ -20,8 +20,8 @@
           config.allowUnfree = true;
         };
         latest = {
-          ver = "v0.31.5";
-          sha256 = "sha256-7Fzo9gU8/Rwt/r1Ctnv0BRHpaVhh/I5vgSKRioyvnzc=";
+	ver = "master";
+	sha256 = "sha256-Bdk60+FJHvpw8J0s7LoifEGZCImRuupwzu/7/N8jbCs=";
         };
         mkProxy =
           { ver, sha256 }:
