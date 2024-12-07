@@ -1,7 +1,6 @@
 name: release
 
-on: [push, pull_request]
-
+on: [push, pull_request, workflow_dispatch]
 jobs:
   build-mod:
     runs-on: ubuntu-22.04
@@ -107,4 +106,48 @@ jobs:
           #draft: true
           artifacts: "*.zip"
           bodyFile: last_release_notes.md
+
+
+  update-flake:
+    name: Update Flake with Latest Version and SHA256 Hash
+    runs-on: ubuntu-22.04
+    needs: build-proxy-linux
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix Package Manager
+        uses: cachix/install-nix-action@v20
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: noita-proxy-linux.zip
+
+      - name: Calc sha of zip
+        id: calculate-sha256-hash
+        run: |
+          HASH=$(nix hash file noita-proxy-linux.zip)
+          echo "sha256=$HASH" >> $GITHUB_ENV
+
+      - name: Update Flake
+        env:
+          LATEST_VERSION_NAME: ${{ github.ref_name }}
+          LATEST_VERSION_SHA256_HASH: ${{ env.sha256 }}
+        run: |
+          sed -i "s/latest.ver = \".*\";/latest.ver = \"${LATEST_VERSION_NAME}\";/g" flake.nix
+          sed -i "s/latest.sha256 = \".*\";/latest.sha256 = \"${LATEST_VERSION_SHA256_HASH}\";/g" flake.nix
+
+      - name: Update flake
+        run: nix flake update
+
+      - name: Commit and Push Changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add flake.nix
+          git commit -m "Update flake.nix with latest version ${LATEST_VERSION_NAME}"
+          git push origin HEAD:${{ github.ref_name }}
   
