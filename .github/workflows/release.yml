@@ -118,7 +118,21 @@ jobs:
 
       - name: Install Nix Package Manager
         uses: cachix/install-nix-action@v20
+        
+      - name: Get latest release
+        id: get_release
+        uses: octokit/request-action@v2.x
+        with:
+          route: GET repos/IntQuant/noita_entangled_worlds/releases/latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract version
+        id: extract_version
+        run: |
+          VERSION=$(echo '${{ steps.get_release.outputs.data }}' | jq -r .tag_name)
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        
       - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
@@ -131,11 +145,8 @@ jobs:
           echo "sha256=$HASH" >> $GITHUB_ENV
 
       - name: Update Flake
-        env:
-          LATEST_VERSION_NAME: ${{ github.ref_name }}
-          LATEST_VERSION_SHA256_HASH: ${{ env.sha256 }}
         run: |
-          sed -i '/latest = {/!b;n;c\\tver = \"${{ github.ref_name }}\";' flake.nix
+          sed -i '/latest = {/!b;n;c\\tver = \"${{ steps.extract_version.outputs.VERSION }}\";' flake.nix
           sed -i '/latest = {/!b;n;n;c\\tsha256 = \"${{ env.sha256 }}\";' flake.nix
           cat flake.nix
 
